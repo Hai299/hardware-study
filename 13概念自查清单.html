@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCB 阶段 2 · 13 概念自查清单</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #ffffff;
+    --surface: #f7f6f2;
+    --text: #2c2c2a;
+    --muted: #5f5e5a;
+    --hint: #888780;
+    --border: rgba(0,0,0,0.12);
+    --accent: #185fa5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f2f1ec;
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 720px; margin: 0 auto; padding: 32px 20px 64px; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .sub { font-size: 13px; color: var(--muted); margin: 0 0 20px; }
+
+  .progress-wrap { margin: 0 0 8px; }
+  .progress-bar {
+    height: 8px; background: #e4e2db; border-radius: 6px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; width: 0%; background: var(--accent);
+    border-radius: 6px; transition: width .25s ease;
+  }
+  .progress-meta {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 13px; color: var(--muted); margin: 8px 0 24px;
+  }
+  .progress-count { font-size: 24px; font-weight: 600; color: var(--text); }
+
+  .group {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 22px; margin-bottom: 16px;
+  }
+  .group-head {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 15px; font-weight: 600; margin: 0 0 14px;
+  }
+  .group-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .group-sub { font-size: 12px; color: var(--hint); font-weight: 400; margin-left: 2px; }
+
+  .item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; }
+  .item + .item { border-top: 1px dashed var(--border); }
+  .item input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none;
+    width: 20px; height: 20px; flex-shrink: 0; margin-top: 1px;
+    border: 1.5px solid #b4b2a9; border-radius: 6px; cursor: pointer;
+    background: #fff; position: relative; transition: all .15s ease;
+  }
+  .item input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+  .item input[type="checkbox"]:checked::after {
+    content: ""; position: absolute; left: 6px; top: 2px;
+    width: 5px; height: 10px;
+    border: solid #fff; border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .item-body { flex: 1; }
+  .item-title { font-size: 14px; font-weight: 600; }
+  .item-title .num { color: var(--hint); font-weight: 600; margin-right: 6px; }
+  .item-desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .item.done .item-title { color: var(--hint); text-decoration: line-through; }
+  .tag {
+    display: inline-block; font-size: 12px; color: var(--accent);
+    background: #e6f1fb; border-radius: 4px; padding: 1px 8px; margin-top: 6px;
+  }
+
+  .actions { display: flex; gap: 12px; margin-top: 24px; }
+  button {
+    font-size: 13px; padding: 9px 18px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--border); background: #fff; color: var(--text);
+    transition: all .15s ease;
+  }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover { background: #0c447c; }
+
+  @media print {
+    body { background: #fff; }
+    .actions { display: none; }
+    .item input[type="checkbox"] { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>PCB 阶段 2 · 13 概念自查清单</h1>
+  <p class="sub">配套《STM32F103C8T6 最小系统板 · 从零到打样》——画板全程对照，勾选状态自动保存。</p>
+
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="fill"></div></div>
+  </div>
+  <div class="progress-meta">
+    <span>完成进度</span>
+    <span class="progress-count"><span id="done">0</span> / 13</span>
+  </div>
+
+  <div id="list"></div>
+
+  <div class="actions">
+    <button class="primary" onclick="window.print()">打印清单</button>
+    <button onclick="resetAll()">重置进度</button>
+  </div>
+</div>
+
+<script>
+  var groups = [
+    { name: "A · 元件库", sub: "第 4、5 章实践", color: "#185fa5", items: [
+      { n: 1, t: "封装 / 符号 / 位号 / BOM", d: "能区分符号与封装、每个元件位号不重不漏、能从 EDA 导出正确 BOM", ch: "第 4、5 章" }
+    ]},
+    { name: "B · 板层", sub: "第 7 章实践", color: "#534ab7", items: [
+      { n: 2, t: "两层板 vs 四层板", d: "知道这块最小系统板为什么用两层板即可", ch: "第 7 章" }
+    ]},
+    { name: "C · 电源与地", sub: "第 7 章实践", color: "#ba7517", items: [
+      { n: 3, t: "走线宽度与电流", d: "电源线按载流加粗（≥ 20 mil），信号线用 10 mil", ch: "第 7 章" },
+      { n: 4, t: "电源线 / 地线处理", d: "电源走线短而粗，地靠整片铺铜解决", ch: "第 7 章" }
+    ]},
+    { name: "D · 内功", sub: "第 7 章实践", color: "#d85a30", items: [
+      { n: 5, t: "覆铜 Ground Plane", d: "顶层底层都铺了地铜，且没有孤立铜皮", ch: "第 7 章" },
+      { n: 6, t: "回流路径 Return Path", d: "能说出「电流走闭环、高频回流贴走线下方」", ch: "第 7 章" }
+    ]},
+    { name: "E · 关键布局", sub: "第 6 章实践", color: "#1d9e75", items: [
+      { n: 7, t: "去耦电容摆放", d: "每个 VDD 引脚旁有 100nF，紧贴引脚、就近打过孔", ch: "第 6 章" },
+      { n: 8, t: "晶振布局与走线", d: "晶振紧贴 MCU、走线短而对称、下方铺地", ch: "第 6 章" }
+    ]},
+    { name: "F · 制造工艺", sub: "第 8、9 章实践", color: "#993556", items: [
+      { n: 9, t: "过孔", d: "知道通孔/盲孔/埋孔区别，本板只用通孔", ch: "第 7 章" },
+      { n: 10, t: "丝印 / 焊盘 / 阻焊 / 开窗", d: "能解释四者各自作用", ch: "第 8 章" },
+      { n: 11, t: "3D 外壳尺寸配合", d: "用过 3D 预览检查元件有没有干涉", ch: "第 8 章" },
+      { n: 12, t: "板厂工艺能力", d: "线宽线距/孔径/板厚都在嘉立创常规能力内", ch: "第 8 章" },
+      { n: 13, t: "Gerber 文件检查", d: "导出后核对层数齐全、钻孔对得上", ch: "第 9 章" }
+    ]}
+  ];
+
+  var STORE_KEY = "pcb13_checklist";
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(STORE_KEY) || "{}"); } catch (e) { state = {}; }
+
+  var list = document.getElementById("list");
+  groups.forEach(function (g, gi) {
+    var group = document.createElement("div");
+    group.className = "group";
+    var head = '<div class="group-head"><span class="group-dot" style="background:' + g.color + '"></span>' +
+               g.name + '<span class="group-sub">' + g.sub + '</span></div>';
+    var html = head;
+    g.items.forEach(function (it) {
+      var key = String(it.n);
+      var checked = state[key] ? "checked" : "";
+      html += '<div class="item" data-key="' + key + '">' +
+        '<input type="checkbox" ' + checked + '>' +
+        '<div class="item-body">' +
+          '<div class="item-title"><span class="num">' + it.n + '.</span>' + it.t + '</div>' +
+          '<div class="item-desc">' + it.d + '</div>' +
+          '<span class="tag">' + it.ch + '</span>' +
+        '</div></div>';
+    });
+    group.innerHTML = html;
+    list.appendChild(group);
+  });
+
+  function update() {
+    var boxes = document.querySelectorAll(".item input[type=checkbox]");
+    var done = 0;
+    boxes.forEach(function (cb) {
+      var key = cb.closest(".item").dataset.key;
+      if (cb.checked) { done++; cb.closest(".item").classList.add("done"); }
+      else { cb.closest(".item").classList.remove("done"); }
+      state[key] = cb.checked;
+    });
+    document.getElementById("done").textContent = done;
+    document.getElementById("fill").style.width = Math.round(done / 13 * 100) + "%";
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  }
+
+  document.querySelectorAll(".item input[type=checkbox]").forEach(function (cb) {
+    cb.addEventListener("change", update);
+  });
+
+  function resetAll() {
+    if (!confirm("确定清除所有勾选进度吗？")) return;
+    state = {};
+    localStorage.removeItem(STORE_KEY);
+    document.querySelectorAll(".item input[type=checkbox]").forEach(function (cb) { cb.checked = false; });
+    update();
+  }
+
+  update();
+</script>
+</body>
+</html>
